@@ -10,10 +10,13 @@ import org.apache.commons.beanutils.PropertyUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.StringUtils;
+import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl;
 
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -28,6 +31,7 @@ public class ApiResultObject extends ApiObject {
 
     private ApiDataType dataType;
 
+
     /**
      * 如果类型是数组类型，此类是里面元素的类型
      * 否则是这个类型本身。
@@ -41,6 +45,16 @@ public class ApiResultObject extends ApiObject {
     private String groupId = null;
 
     private String groupName = null;
+
+    public Boolean getPageInfo() {
+        return isPageInfo;
+    }
+
+    public void setPageInfo(Boolean pageInfo) {
+        isPageInfo = pageInfo;
+    }
+
+    private Boolean isPageInfo = false;
 
     private final List<ApiResultObject> children = new ArrayList<>();
 
@@ -168,8 +182,11 @@ public class ApiResultObject extends ApiObject {
      * @param totalResults
      * @return
      */
+    public static final ApiResultObject parseResultType(Method method, KeyedList<String, ApiResultObject> totalResults) {
+        return parseResultType(method,totalResults,null);
+    }
     public static final ApiResultObject parseResultType(
-            Method method, KeyedList<String, ApiResultObject> totalResults) {
+            Method method, KeyedList<String, ApiResultObject> totalResults,Class<?> returnType) {
 
         if (method == null) {
             return null;
@@ -179,8 +196,80 @@ public class ApiResultObject extends ApiObject {
             totalResults = new KeyedList<>();
         }
 
-        final Class<?> clazz = method.getReturnType();
-        final ApiDataType dataType = ApiDataType.toDataType(clazz);
+        if (returnType == null){
+            returnType = method.getReturnType();
+        }
+        Class<?> clazz = returnType;
+
+
+        //先检查，去掉finall，因为可能修改
+        ApiDataType dataType = ApiDataType.toDataType(clazz);
+
+        // 子类型。
+        Class<?> elementType = null;
+
+        //----- 特殊处理
+        boolean isPageInfo = false;
+        if(clazz.getName().equals("com.xc.mall.web.vo.Result")){
+            Type returnDataType  = method.getGenericReturnType();
+            Type gType = Api2DocUtils.getGenericType(returnDataType);
+            if(gType == null){
+                //Result没有指定具体类型，直接使用Reuslt
+                //跳过特殊处理
+            }else{
+                if(gType instanceof ParameterizedType) {
+                    //返回结果是Result的Data具体类还是泛型
+                    ParameterizedType parameterizedType = (ParameterizedType)gType;
+                    Type dataGType = Api2DocUtils.getGenericType(parameterizedType);
+                    if(dataGType == null){
+                        //data具体类型是泛型，但没用指定实现类，不做进一步处理，直接使用该类代替Result
+                        clazz = (Class<?>) gType;
+                        Method[] methods = clazz.getMethods();
+                        for(Method m :methods){
+                            if(m.getName().equals("getData")){
+                                return parseResultType(m,null,clazz);
+                            }
+                        }
+                    }else{
+                        //替换clazz和elmentType
+                        clazz =  (Class<?>) parameterizedType.getRawType();
+                        elementType = (Class<?>) dataGType;
+                        // 处理PageInfo
+                        if (clazz.getName().equals("com.github.pagehelper.PageInfo")) {
+                            ApiResultObject pageInfoObject =  parseResultType(method,null,clazz);
+                            pageInfoObject.setSourceType(elementType);
+                            pageInfoObject.setPageInfo(true);
+
+                            totalResults.add(pageInfoObject.groupId,pageInfoObject);
+                            clazz = java.util.List.class;
+                            isPageInfo = true;
+                        }
+
+
+
+                    }
+                }else{
+                    //返回结果是Result的具体类，用该类提的result
+                    clazz = (Class<?>) gType;
+                    returnType = clazz;
+                    elementType = clazz;
+//                    Method[] methods = clazz.getMethods();
+//                    for(Method m :methods){
+//                        if(m.getName().equals("getData")){
+//                            return parseResultType(m,null,(Class<?>) gType);
+//                        }
+//                    }
+                }
+            }
+
+        }
+        // --------
+
+
+
+        dataType = ApiDataType.toDataType(clazz);
+
+
         if (dataType == null) {
             return null;
         }
@@ -191,12 +280,15 @@ public class ApiResultObject extends ApiObject {
             return createSimple(clazz, clazz, dataType, typeName);
         }
 
-        // 子类型。
-        Class<?> elementType = null;
+
 
         // 数组类型，找到它的元素的具体类型，然后处理具体类型。
         if (dataType.isArrayType()) {
-            elementType = Api2DocUtils.getArrayElementClass(method);
+            if(elementType == null){
+                //如果前面特殊判断已经取了，就不再取了
+                elementType = Api2DocUtils.getArrayElementClass(method);
+            }
+
             if (elementType == null) {
                 log.warn("Can't find element class by method: {}", method);
                 return null;
@@ -205,12 +297,25 @@ public class ApiResultObject extends ApiObject {
             ApiDataType elementDataType = ApiDataType.toDataType(elementType);
             typeName = getTypeName(elementType, elementDataType) + "[]";
 
+
             // 数组类型，但元素是基本类型的，也直接处理。
             if (elementDataType != null && elementDataType.isSimpleType()) {
                 return createSimple(elementType, clazz,
                         dataType, typeName);
             }
         }
+//        // 参考数组类型处理PageInfo
+//        if (clazz.getName().equals("com.github.pagehelper.PageInfo")) {
+//
+//            ApiDataType elementDataType = ApiDataType.toDataType(elementType);
+//            typeName = getTypeName(elementType, elementDataType) + "[PageInfo]";
+//
+//            // 数组类型，但元素是基本类型的，也直接处理。
+//            if (elementDataType != null && elementDataType.isSimpleType()) {
+//                return createSimple(elementType, clazz,
+//                        dataType, typeName);
+//            }
+//        }
 
         // 复杂类型的情况。
         ApiResultObject result = new ApiResultObject();
@@ -218,11 +323,13 @@ public class ApiResultObject extends ApiObject {
         result.setSourceType(clazz);
         result.setTypeName(typeName);
         result.setId("");
-
-        if (dataType.isObjectType()) {
-            elementType = method.getReturnType();
+        if(isPageInfo){
+            result.setPageInfo(true);
         }
 
+        if (dataType.isObjectType() && elementType == null) {
+            elementType = returnType;
+        }
         // 没有子类型，直接返回。
         // TODO:  暂时不解析 Map 内部的类型。
         if (elementType == null || Map.class.equals(elementType)) {

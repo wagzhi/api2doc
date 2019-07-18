@@ -320,6 +320,10 @@ public class Api2DocCollector implements BeanPostProcessor {
                 } else {
                     returnTypeDesc = result.getSourceType().getSimpleName();
                 }
+                //特殊处理PageInfo类型
+                if(result.getPageInfo()){
+                    returnTypeDesc = "PageInfo["+ result.getSourceType().getSimpleName()+"]";
+                }
             }
         }
         if (returnTypeDesc == null) {

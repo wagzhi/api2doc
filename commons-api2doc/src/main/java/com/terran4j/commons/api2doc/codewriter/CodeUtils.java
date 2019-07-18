@@ -4,19 +4,19 @@ import java.util.Set;
 
 public class CodeUtils {
 
-	public static final void addImport(Class<?> clazz, Set<String> imports) {
-		if (clazz == null || clazz.getPackage() == null) {
-			return;
-		}
+    public static final void addImport(Class<?> clazz, Set<String> imports) {
+        if (clazz == null || clazz.getPackage() == null) {
+            return;
+        }
 
-		String paramPkgName = clazz.getPackage().getName();
+        String paramPkgName = clazz.getPackage().getName();
 
-		if (paramPkgName.equals("java.lang")) {
-			return;
-		}
+        if (paramPkgName.equals("java.lang")) {
+            return;
+        }
 
-		if (paramPkgName.startsWith("java.") || paramPkgName.startsWith("javax.")) {
-			imports.add(clazz.getName());
-		}
-	}
+        if (paramPkgName.startsWith("java.") || paramPkgName.startsWith("javax.")) {
+            imports.add(clazz.getName());
+        }
+    }
 }

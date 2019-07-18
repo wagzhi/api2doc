@@ -5,7 +5,7 @@
 
     <groupId>com.github.terran4j</groupId>
     <artifactId>terran4j-commons-parent</artifactId>
-    <version>1.0.2</version>
+    <version>xc-1.0.2-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>terran4j-commons-parent</name>
     <url>https://github.com/terran4j/commons</url>
@@ -48,12 +48,12 @@
             <timezone>+8</timezone>
         </developer>
     </developers>
-    <scm>
-        <connection>scm:git:https://github.com/terran4j/commons.git</connection>
-        <developerConnection>scm:git:https://github.com/terran4j/commons.git</developerConnection>
-        <url>https://github.com/terran4j/commons</url>
-        <tag>${project.version}</tag>
-    </scm>
+<!--    <scm>-->
+<!--        <connection>scm:git:https://github.com/terran4j/commons.git</connection>-->
+<!--        <developerConnection>scm:git:https://github.com/terran4j/commons.git</developerConnection>-->
+<!--        <url>https://github.com/terran4j/commons</url>-->
+<!--        <tag>${project.version}</tag>-->
+<!--    </scm>-->
 
     <dependencyManagement>
         <dependencies>
@@ -364,20 +364,33 @@
 
 
     <distributionManagement>
-        <!-- SNAPSHOT版本，部署到私服  -->
-        <snapshotRepository>
-            <id>terran4j-snapshots</id>
-            <name>terran4j-snapshots</name>
-            <url>${terran4j.snapshots.url}</url>
-        </snapshotRepository>
-
-        <!-- 正式版本，部署到中央仓库 -->
         <repository>
-            <id>ossrh</id>
-            <name>Maven Central Staging Repository</name>
-            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+            <id>xc-release</id>
+            <name>Nexus Releases Repository</name>
+            <url>http://47.98.43.247:8081/repository/xc-release/</url>
         </repository>
+        <snapshotRepository>
+            <id>xc-snapshot</id>
+            <name>Nexus Snapshots Repository</name>
+            <url>http://47.98.43.247:8081/repository/xc-snapshot/</url>
+        </snapshotRepository>
     </distributionManagement>
+
+<!--    <distributionManagement>-->
+<!--        &lt;!&ndash; SNAPSHOT版本，部署到私服  &ndash;&gt;-->
+<!--        <snapshotRepository>-->
+<!--            <id>terran4j-snapshots</id>-->
+<!--            <name>terran4j-snapshots</name>-->
+<!--            <url>${terran4j.snapshots.url}</url>-->
+<!--        </snapshotRepository>-->
+
+<!--        &lt;!&ndash; 正式版本，部署到中央仓库 &ndash;&gt;-->
+<!--        <repository>-->
+<!--            <id>ossrh</id>-->
+<!--            <name>Maven Central Staging Repository</name>-->
+<!--            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>-->
+<!--        </repository>-->
+<!--    </distributionManagement>-->
 
     <build>
         <resources>
@@ -426,56 +439,56 @@
         </plugins>
     </build>
 
-    <profiles>
-        <profile>
-            <id>release</id>
-            <!--
-                构建 snapshot 版本时不要用这些插件；
-                需要发布 release 版时再用。
-            -->
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.sonatype.plugins</groupId>
-                        <artifactId>nexus-staging-maven-plugin</artifactId>
-                        <version>1.6.3</version>
-                        <extensions>true</extensions>
-                        <configuration>
-                            <serverId>ossrh</serverId>
-                            <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-                            <autoReleaseAfterClose>true</autoReleaseAfterClose>
-                        </configuration>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-javadoc-plugin</artifactId>
-                        <version>2.10.3</version>
-                        <executions>
-                            <execution>
-                                <id>attach-javadocs</id>
-                                <goals>
-                                    <goal>jar</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-gpg-plugin</artifactId>
-                        <version>1.6</version>
-                        <executions>
-                            <execution>
-                                <id>sign-artifacts</id>
-                                <phase>verify</phase>
-                                <goals>
-                                    <goal>sign</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
+<!--    <profiles>-->
+<!--        <profile>-->
+<!--            <id>release</id>-->
+<!--            &lt;!&ndash;-->
+<!--                构建 snapshot 版本时不要用这些插件；-->
+<!--                需要发布 release 版时再用。-->
+<!--            &ndash;&gt;-->
+<!--            <build>-->
+<!--                <plugins>-->
+<!--                    <plugin>-->
+<!--                        <groupId>org.sonatype.plugins</groupId>-->
+<!--                        <artifactId>nexus-staging-maven-plugin</artifactId>-->
+<!--                        <version>1.6.3</version>-->
+<!--                        <extensions>true</extensions>-->
+<!--                        <configuration>-->
+<!--                            <serverId>ossrh</serverId>-->
+<!--                            <nexusUrl>https://oss.sonatype.org/</nexusUrl>-->
+<!--                            <autoReleaseAfterClose>true</autoReleaseAfterClose>-->
+<!--                        </configuration>-->
+<!--                    </plugin>-->
+<!--                    <plugin>-->
+<!--                        <groupId>org.apache.maven.plugins</groupId>-->
+<!--                        <artifactId>maven-javadoc-plugin</artifactId>-->
+<!--                        <version>2.10.3</version>-->
+<!--                        <executions>-->
+<!--                            <execution>-->
+<!--                                <id>attach-javadocs</id>-->
+<!--                                <goals>-->
+<!--                                    <goal>jar</goal>-->
+<!--                                </goals>-->
+<!--                            </execution>-->
+<!--                        </executions>-->
+<!--                    </plugin>-->
+<!--                    <plugin>-->
+<!--                        <groupId>org.apache.maven.plugins</groupId>-->
+<!--                        <artifactId>maven-gpg-plugin</artifactId>-->
+<!--                        <version>1.6</version>-->
+<!--                        <executions>-->
+<!--                            <execution>-->
+<!--                                <id>sign-artifacts</id>-->
+<!--                                <phase>verify</phase>-->
+<!--                                <goals>-->
+<!--                                    <goal>sign</goal>-->
+<!--                                </goals>-->
+<!--                            </execution>-->
+<!--                        </executions>-->
+<!--                    </plugin>-->
+<!--                </plugins>-->
+<!--            </build>-->
+<!--        </profile>-->
+<!--    </profiles>-->
 
 </project>
